@@ -1,4 +1,16 @@
 #include "RTClib_EPOXY.h"
+#include <time.h>
+#include <stdio.h>
+
+time_t beginTime;
+time_t rtcTime;
+
+static uint8_t conv2d(const char *p) {
+  uint8_t v = 0;
+  if ('0' <= *p && *p <= '9')
+    v = *p - '0';
+  return 10 * v + *++p - '0';
+}
 
 DateTime::DateTime(uint16_t year, uint8_t month, uint8_t day, uint8_t hour,
                    uint8_t min, uint8_t sec) {
@@ -9,6 +21,44 @@ DateTime::DateTime(uint16_t year, uint8_t month, uint8_t day, uint8_t hour,
   hh = hour;
   mm = min;
   ss = sec;
+}
+
+DateTime::DateTime(const __FlashStringHelper *date, const __FlashStringHelper *time) {
+  char buff[11];
+  memcpy_P(buff, date, 11);
+  yOff = conv2d(buff + 9);
+  // Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec
+  switch (buff[0]) {
+  case 'J':
+    m = (buff[1] == 'a') ? 1 : ((buff[2] == 'n') ? 6 : 7);
+    break;
+  case 'F':
+    m = 2;
+    break;
+  case 'A':
+    m = buff[2] == 'r' ? 4 : 8;
+    break;
+  case 'M':
+    m = buff[2] == 'r' ? 3 : 5;
+    break;
+  case 'S':
+    m = 9;
+    break;
+  case 'O':
+    m = 10;
+    break;
+  case 'N':
+    m = 11;
+    break;
+  case 'D':
+    m = 12;
+    break;
+  }
+  d = conv2d(buff + 4);
+  memcpy_P(buff, time, 8);
+  hh = conv2d(buff);
+  mm = conv2d(buff + 3);
+  ss = conv2d(buff + 6);
 }
 
 String DateTime::timestamp(timestampOpt opt) {
@@ -28,9 +78,8 @@ String DateTime::timestamp(timestampOpt opt) {
   return String(buffer);
 }
 
-boolean RTC_DS3231::begin(void) { 
-    time( &this->beginTime );
-    this->rtcTime = 0;
+boolean RTC_DS3231::begin() { 
+    time( &beginTime );
     return true; 
 }
 
@@ -49,8 +98,8 @@ void RTC_DS3231::adjust(const DateTime &dt){
 DateTime RTC_DS3231::now() {
     time_t now;
     time( &now );
-    time_t diff = now - this->beginTime;
-    now = this->rtcTime + diff;
+    time_t diff = now - beginTime;
+    now = rtcTime + diff;
 
     struct tm *strNow = localtime( &now );
     uint8_t ss = strNow->tm_sec;

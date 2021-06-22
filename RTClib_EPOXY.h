@@ -2,7 +2,6 @@
 #define __RTC_LIB_EPOXY_H__
 
 #include <Arduino.h>
-#include <time.h>
 
 /** Constants */
 #define SECONDS_PER_DAY 86400L ///< 60 * 60 * 24
@@ -13,6 +12,7 @@ class DateTime {
 public:
   DateTime(uint16_t year, uint8_t month, uint8_t day, uint8_t hour = 0,
            uint8_t min = 0, uint8_t sec = 0);
+  DateTime(const __FlashStringHelper *date, const __FlashStringHelper *time);
 
   uint16_t year() const { return 2000U + yOff; }
   uint8_t month() const { return m; }
@@ -31,7 +31,6 @@ public:
   String timestamp(timestampOpt opt = TIMESTAMP_FULL);
 
 protected:
-  struct tm timeData; 
   uint8_t yOff; ///< Year offset from 2000
   uint8_t m;    ///< Month 1-12
   uint8_t d;    ///< Day 1-31
@@ -42,12 +41,9 @@ protected:
 
 class RTC_DS3231 {
 public:
-  boolean begin(void);
+  boolean begin();
   void adjust(const DateTime &dt);
   DateTime now();
-protected:
-  time_t beginTime;
-  time_t rtcTime;
 };
 
 #endif
