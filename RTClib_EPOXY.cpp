@@ -5,6 +5,23 @@
 time_t beginTime;
 time_t rtcTime;
 
+const uint8_t daysInMonth[] PROGMEM = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30};
+
+static uint16_t date2days(uint16_t y, uint8_t m, uint8_t d) {
+  if (y >= 2000U) 
+    y -= 2000U;
+  uint16_t days = d;
+  for (uint8_t i = 1; i < m; ++i)
+    days += (*(const unsigned char *)(daysInMonth + i - 1));
+  if (m > 2 && y % 4 == 0)
+    ++days;
+  return days + 365 * y + (y + 3) / 4 - 1;
+}
+
+static uint32_t time2ulong(uint16_t days, uint8_t h, uint8_t m, uint8_t s) {
+  return ((days * 24UL + h) * 60 + m) * 60 + s;
+}
+
 static uint8_t conv2d(const char *p) {
   uint8_t v = 0;
   if ('0' <= *p && *p <= '9')
@@ -61,6 +78,32 @@ DateTime::DateTime(const __FlashStringHelper *date, const __FlashStringHelper *t
   ss = conv2d(buff + 6);
 }
 
+uint32_t DateTime::secondstime(void) const {
+  uint32_t t;
+  uint16_t days = date2days(yOff, m, d);
+  t = time2ulong(days, hh, mm, ss);
+  return t;
+}
+
+uint32_t DateTime::unixtime(void) const {
+  uint32_t t;
+  uint16_t days = date2days(yOff, m, d);
+  t = time2ulong(days, hh, mm, ss);
+  t += SECONDS_FROM_1970_TO_2000; // seconds from 1970 to 2000
+
+  return t;
+}
+
+uint8_t DateTime::twelveHour() const {
+  if (hh == 0 || hh == 12) { // midnight or noon
+    return 12;
+  } else if (hh > 12) { // 1 o'clock or later
+    return hh - 12;
+  } else { // morning
+    return hh;
+  }
+}
+
 String DateTime::timestamp(timestampOpt opt) {
   char buffer[25];
 
@@ -82,6 +125,7 @@ boolean RTC_DS3231::begin() {
     time( &beginTime );
     return true; 
 }
+bool RTC_DS3231::lostPower(void) { return false; }
 
 void RTC_DS3231::adjust(const DateTime &dt){
     struct tm temp;

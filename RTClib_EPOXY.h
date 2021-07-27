@@ -23,6 +23,12 @@ public:
   uint8_t minute() const { return mm; }
   uint8_t second() const { return ss; }
 
+  /* 32-bit times as seconds since 2000-01-01. */
+  uint32_t secondstime() const;
+
+  /* 32-bit times as seconds since 1970-01-01. */
+  uint32_t unixtime(void) const;
+
   enum timestampOpt {
     TIMESTAMP_FULL, //!< `YYYY-MM-DDThh:mm:ss`
     TIMESTAMP_TIME, //!< `hh:mm:ss`
@@ -42,6 +48,7 @@ protected:
 class RTC_DS3231 {
 public:
   boolean begin();
+  bool lostPower(void);
   void adjust(const DateTime &dt);
   DateTime now();
 };
