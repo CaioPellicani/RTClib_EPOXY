@@ -4,7 +4,8 @@
 using namespace aunit;
 
 test(RTClib_EPOXY_DateTime) { 
-  DateTime tDateTime = DateTime( 2000, 1, 1, 0, 0, 5 );
+  DateTime tDateTime;
+  tDateTime = DateTime( 2000, 1, 1, 0, 0, 5 );
 
   assertEqual( 5U, tDateTime.secondstime() );
   assertEqual( 946684805U, tDateTime.unixtime() );
@@ -19,6 +20,9 @@ test(RTClib_EPOXY_DateTime) {
   assertEqual( tDateTime.second(), 5 );
   assertEqual( tDateTime.twelveHour(), 12 );
   assertEqual( tDateTime.isPM(), 0 );
+
+  tDateTime = DateTime( 946684805U );
+  assertEqual( tDateTime.timestamp( tDateTime.TIMESTAMP_FULL ), "2000-01-01T00:00:05" );
 }
 
 test(RTClib_EPOXY_ds3231) {

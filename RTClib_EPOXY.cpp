@@ -29,6 +29,33 @@ static uint8_t conv2d(const char *p) {
   return 10 * v + *++p - '0';
 }
 
+DateTime::DateTime(uint32_t t) {
+  t -= SECONDS_FROM_1970_TO_2000; // bring to 2000 timestamp from 1970
+
+  ss = t % 60;
+  t /= 60;
+  mm = t % 60;
+  t /= 60;
+  hh = t % 24;
+  uint16_t days = t / 24;
+  uint8_t leap;
+  for (yOff = 0;; ++yOff) {
+    leap = yOff % 4 == 0;
+    if (days < 365U + leap)
+      break;
+    days -= 365 + leap;
+  }
+  for (m = 1; m < 12; ++m) {
+    uint8_t daysPerMonth = ( *daysInMonth ) + m - 1;
+    if (leap && m == 2)
+      ++daysPerMonth;
+    if (days < daysPerMonth)
+      break;
+    days -= daysPerMonth;
+  }
+  d = days + 1;
+}
+
 DateTime::DateTime(uint16_t year, uint8_t month, uint8_t day, uint8_t hour,
                    uint8_t min, uint8_t sec) {
   if (year >= 2000U) year -= 2000U;
@@ -125,7 +152,7 @@ boolean RTC_DS3231::begin() {
     time( &beginTime );
     return true; 
 }
-bool RTC_DS3231::lostPower(void) { return false; }
+bool RTC_DS3231::lostPower(void) { return true; }
 
 void RTC_DS3231::adjust(const DateTime &dt){
     struct tm temp;
