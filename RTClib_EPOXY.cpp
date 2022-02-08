@@ -3,7 +3,7 @@
 #include <stdio.h>
 
 time_t beginTime;
-time_t rtcTime;
+DateTime rtcTime;
 
 const uint8_t daysInMonth[] PROGMEM = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30};
 
@@ -149,38 +149,17 @@ String DateTime::timestamp(timestampOpt opt) {
 }
 
 boolean RTC_DS3231::begin() { 
-    time( &beginTime );
+    beginTime = time( 0 );
     return true; 
 }
 bool RTC_DS3231::lostPower(void) { return true; }
 
 void RTC_DS3231::adjust(const DateTime &dt){
-    struct tm temp;
-    temp.tm_year = dt.year();
-    temp.tm_mon  = dt.month();
-    temp.tm_mday = dt.day();
-    temp.tm_hour = dt.hour();
-    temp.tm_min  = dt.minute();
-    temp.tm_sec  = dt.second();
-    
-    rtcTime = mktime( &temp );
+    rtcTime = dt;
 }
 
 DateTime RTC_DS3231::now() {
-    time_t now;
-    time( &now );
-    time_t diff = now - beginTime;
-    now = rtcTime + diff;
-
-    struct tm *strNow = localtime( &now );
-    uint8_t ss = strNow->tm_sec;
-    uint8_t mm = strNow->tm_min;
-    uint8_t hh = strNow->tm_hour;
-    uint8_t d  = strNow->tm_mday;
-    uint8_t m  = strNow->tm_mon;
-    uint16_t y = strNow->tm_year;
-
-    return DateTime(y, m, d, hh, mm, ss);
+    return DateTime( rtcTime.unixtime() + time( 0 ) - beginTime );
 }
 
 
